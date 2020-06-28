@@ -1,0 +1,27 @@
+{
+  "name": "partybot",
+  "version": "0.1.0",
+  "description": "A Discord Bot that allows server members to play various games together.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thismarvin/partybot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot"
+  ],
+  "author": "Marvin Valenzuela",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thismarvin/partybot/issues"
+  },
+  "homepage": "https://github.com/thismarvin/partybot#readme",
+  "dependencies": {
+    "discord.js": "^12.2.0",
+    "dotenv": "^8.2.0"
+  }
+}
