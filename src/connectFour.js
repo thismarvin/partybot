@@ -20,12 +20,24 @@ const PALETTES = {
 	},
 };
 
+const DIRECTIONS = {
+	UP: 1,
+	UP_RIGHT: 2,
+	RIGHT: 4,
+	DOWN_RIGHT: 8,
+	DOWN: 16,
+	DOWN_LEFT: 32,
+	LEFT: 64,
+	UP_LEFT: 128,
+};
+
 class Board {
 	constructor(rows, columns) {
 		this.rows = rows;
 		this.columns = columns;
 		this.state = new Array(this.rows * this.columns).fill(0);
 		this.turns = 0;
+		this.target = 4;
 	}
 
 	get(x, y) {
@@ -34,6 +46,122 @@ class Board {
 
 	set(x, y, value) {
 		this.state[this.columns * y + x] = value;
+	}
+
+	getAdjacent(x, y) {
+		const result = [];
+		const targetPiece = this.get(x, y);
+
+		if (x > 0 && this.get(x - 1, y) === targetPiece) {
+			result.push(DIRECTIONS.LEFT);
+		}
+		if (x < this.columns - 1 && this.get(x + 1, y) === targetPiece) {
+			result.push(DIRECTIONS.RIGHT);
+		}
+		if (y > 0 && this.get(x, y - 1) === targetPiece) {
+			result.push(DIRECTIONS.UP);
+		}
+		if (y < this.rows - 1 && this.get(x, y + 1) === targetPiece) {
+			result.push(DIRECTIONS.DOWN);
+		}
+
+		if (y > 0 && x > 0 && this.get(x - 1, y - 1) === targetPiece) {
+			result.push(DIRECTIONS.UP_LEFT);
+		}
+		if (
+			y > 0 &&
+			x < this.columns - 1 &&
+			this.get(x + 1, y - 1) === targetPiece
+		) {
+			result.push(DIRECTIONS.UP_RIGHT);
+		}
+		if (y < this.rows - 1 && x > 0 && this.get(x - 1, y + 1) === targetPiece) {
+			result.push(DIRECTIONS.DOWN_LEFT);
+		}
+		if (
+			y < this.rows - 1 &&
+			x < this.columns - 1 &&
+			this.get(x + 1, y + 1) === targetPiece
+		) {
+			result.push(DIRECTIONS.DOWN_RIGHT);
+		}
+
+		return result;
+	}
+
+	walk(x, y, targetPiece, direction) {
+		if (x < 0 || x > this.columns || y < 0 || this.y > this.rows) {
+			return 0;
+		}
+
+		if (x === 0 || x === this.columns - 1 || y === 0 || y === this.rows - 1) {
+			return this.get(x, y) === targetPiece ? 1 : 0;
+		}
+
+		switch (direction) {
+			case DIRECTIONS.UP:
+				return this.get(x, y) === targetPiece
+					? 1 + this.walk(x, y - 1, targetPiece, direction)
+					: 0;
+
+			case DIRECTIONS.UP_RIGHT:
+				return this.get(x, y) === targetPiece
+					? 1 + this.walk(x + 1, y - 1, targetPiece, direction)
+					: 0;
+
+			case DIRECTIONS.RIGHT:
+				return this.get(x, y) === targetPiece
+					? 1 + this.walk(x + 1, y, targetPiece, direction)
+					: 0;
+
+			case DIRECTIONS.DOWN_RIGHT:
+				return this.get(x, y) === targetPiece
+					? 1 + this.walk(x + 1, y + 1, targetPiece, direction)
+					: 0;
+
+			case DIRECTIONS.DOWN:
+				return this.get(x, y) === targetPiece
+					? this.walk(x, y + 1, targetPiece, direction) + 1
+					: 0;
+
+			case DIRECTIONS.DOWN_LEFT:
+				return this.get(x, y) === targetPiece
+					? 1 + this.walk(x - 1, y + 1, targetPiece, direction)
+					: 0;
+
+			case DIRECTIONS.LEFT:
+				return this.get(x, y) === targetPiece
+					? 1 + this.walk(x - 1, y, targetPiece, direction)
+					: 0;
+
+			case DIRECTIONS.UP_LEFT:
+				return this.get(x, y) === targetPiece
+					? 1 + this.walk(x - 1, y - 1, targetPiece, direction)
+					: 0;
+
+			default:
+				return 0;
+		}
+	}
+
+	winCondition(targetPiece) {
+		for (let y = 0; y < this.rows; y++) {
+			for (let x = 0; x < this.columns; x++) {
+				if (this.get(x, y) !== targetPiece) {
+					continue;
+				}
+
+				const adjacent = this.getAdjacent(x, y);
+
+				for (let direction of adjacent) {
+					if (this.walk(x, y, targetPiece, direction) >= this.target) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	dropAt(x) {
@@ -45,8 +173,8 @@ class Board {
 
 		for (let y = 0; y < this.rows; y++) {
 			if (y + 1 >= this.rows || this.get(x, y + 1) !== 0) {
-        this.set(x, y, player);
-        this.turns++;
+				this.set(x, y, player);
+				this.turns++;
 				return true;
 			}
 		}

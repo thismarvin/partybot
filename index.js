@@ -64,21 +64,20 @@ client.on("message", async (message) => {
 					return;
 				}
 
-				games[i].turns++;
-
-				await message.channel.send(
-					`Current match: ${games[i].challenger} vs ${
-						games[i].opponent
-					}. You're up next ${
-						games[i].turns % 2 === 0 ? games[i].opponent : games[i].challenger
-					}`
-				);
 				await sendBoard(
 					message,
-					games[i].currentUser,
+					games[i].challenger,
 					games[i].opponent,
 					games[i].board
 				);
+
+				if (games[i].board.winCondition(games[i].turns % 2 === 0 ? 1 : 2)) {
+					await message.reply("you won! Congrats! 🎉");
+					games.splice(i, 1);
+				} else {
+					games[i].turns++;
+				}
+
 				return;
 		}
 	}
@@ -112,10 +111,7 @@ client.on("message", async (message) => {
 			}
 
 			const board = new C4.Board(6, 7);
-			await message.channel.send("Starting a new game of Connect Four!");
-			await message.channel.send(
-				`Current match: ${currentUser} vs ${opponent}. You're up next ${opponent}`
-			);
+
 			await sendBoard(message, currentUser, opponent, board);
 
 			games.push({
@@ -150,8 +146,24 @@ client.on("message", async (message) => {
 async function sendBoard(message, currentUser, opponent, board) {
 	const fileName = `c4_${currentUser}_vs_${opponent}.png`;
 	const canvas = C4.createCanvasFromBoard(board);
+
 	await C4.saveCanvasAsPNG(canvas, __dirname, fileName);
-	await message.channel.send(new Discord.MessageAttachment(`./${fileName}`));
+
+	const attachment = new Discord.MessageAttachment(
+		`./${fileName}`,
+		"board.png"
+	);
+
+	const embed = new Discord.MessageEmbed()
+		.setTitle(`${currentUser} vs ${opponent}`)
+		.setDescription(
+			`You're up next ${board.turns % 2 == 0 ? opponent : currentUser}`
+		)
+		.attachFiles(attachment)
+		.setImage("attachment://board.png");
+
+	await message.channel.send(embed);
+
 	fs.unlinkSync(`${__dirname}/${fileName}`, () => {});
 }
 
