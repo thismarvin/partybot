@@ -12,12 +12,12 @@ client.on("ready", () => {
 	console.log(`Logged in as ${client.user.tag}!`);
 });
 
-client.on("message", (message) => {
+client.on("message", async (message) => {
 	const formattedMessage = message.content.toLowerCase().trim().split(" ");
-	const player = message.author.username;
+	const currentUser = message.author.username;
 
 	for (let i = 0; i < games.length; i++) {
-		if (!games[i].players.has(player)) {
+		if (!games[i].players.has(currentUser)) {
 			continue;
 		}
 
@@ -41,31 +41,44 @@ client.on("message", (message) => {
 				}
 				return;
 
-			case "connectfour":		
-        const x = parseInt(message.content);
+			case "connectfour":
+				const x = parseInt(message.content);
 
-        if (!Number.isInteger(x)) {
+				if (!Number.isInteger(x)) {
 					return;
 				}
 
-				const newState = C4.placeAt(games[i].board, x, games[i].turns);
-				console.log(newState);
+				if (games[i].challenger !== games[i].opponent) {
+					if (games[i].turns % 2 === 0 && currentUser === games[i].challenger) {
+						return;
+					} else if (
+						games[i].turns % 2 !== 0 &&
+						currentUser === games[i].opponent
+					) {
+						return;
+					}
+				}
+
+				if (!games[i].board.dropAt(x - 1)) {
+					message.reply("that is not a valid move!");
+					return;
+				}
+
 				games[i].turns++;
 
-				const board = C4.getBoard(newState);
-				games[i].board = newState;
-
-				const out = fs.createWriteStream(__dirname + "/test.png");
-				const stream = board.createPNGStream();
-				stream.pipe(out);
-
-				out.on("finish", async () => {
-					await message.channel.send(
-						new Discord.MessageAttachment("./test.png")
-					);
-					fs.unlink(__dirname + "/test.png", () => {});
-				});
-
+				await message.channel.send(
+					`Current match: ${games[i].challenger} vs ${
+						games[i].opponent
+					}. You're up next ${
+						games[i].turns % 2 === 0 ? games[i].opponent : games[i].challenger
+					}`
+				);
+				await sendBoard(
+					message,
+					games[i].currentUser,
+					games[i].opponent,
+					games[i].board
+				);
 				return;
 		}
 	}
@@ -77,34 +90,40 @@ client.on("message", (message) => {
 	switch (formattedMessage[1]) {
 		case "games":
 			message.reply(
-				"here is a list of all the games I can help you play: NumberGuess, ConnectFour"
+				"here is a list of all the games I can help you play: NumberGuess and ConnectFour."
 			);
 			break;
 
 		case "connectfour":
 			if (formattedMessage[2] !== "vs") {
-				message.channel.send("Error");
+				message.reply("sorry but that is not a valid command!");
 				break;
 			}
 
-			message.channel.send("Starting a new game of Connect Four!");
+			if (message.mentions.users.size === 0) {
+				message.reply("make sure to mention someone to challenge them.");
+				return;
+			}
 
-			const state = C4.newGame();
-			const board = C4.getBoard(state);
+			let opponent = "";
+			for (let entry of message.mentions.users.entries()) {
+				opponent = entry[1].username;
+				break;
+			}
 
-			const out = fs.createWriteStream(__dirname + "/test.png");
-			const stream = board.createPNGStream();
-			stream.pipe(out);
-
-			out.on("finish", async () => {
-				await message.channel.send(new Discord.MessageAttachment("./test.png"));
-				fs.unlink(__dirname + "/test.png", () => {});
-			});
+			const board = new C4.Board(6, 7);
+			await message.channel.send("Starting a new game of Connect Four!");
+			await message.channel.send(
+				`Current match: ${currentUser} vs ${opponent}. You're up next ${opponent}`
+			);
+			await sendBoard(message, currentUser, opponent, board);
 
 			games.push({
 				type: "connectfour",
-				players: new Set([player, message.author.username]),
-				board: state,
+				challenger: currentUser,
+				opponent: opponent,
+				players: new Set([currentUser, opponent]),
+				board: board,
 				turns: 0,
 			});
 			break;
@@ -117,80 +136,23 @@ client.on("message", (message) => {
 
 			games.push({
 				type: "numberguess",
-				players: new Set([player]),
+				players: new Set([currentUser]),
 				number: Math.floor(Math.random() * 100 + 1),
 				turns: 0,
 			});
 			break;
 
-		// case "test":
-		// 	const board = getBoard([
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		1,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		2,
-		// 		2,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		1,
-		// 		1,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		1,
-		// 		2,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		0,
-		// 		1,
-		// 		2,
-		// 		1,
-		// 		2,
-		// 		0,
-		// 		0,
-		// 	]);
-
-		// 	const out = fs.createWriteStream(__dirname + "/test.png");
-		// 	const stream = board.createPNGStream();
-		// 	stream.pipe(out);
-
-		// 	out.on("finish", async () => {
-		// 		await message.channel.send(new Discord.MessageAttachment("./test.png"));
-		// 		fs.unlink(__dirname + "/test.png", () => {});
-		// 	});
-		// 	break;
-
 		default:
-			message.reply("Sorry but that is not a valid command!");
+			message.reply("sorry but that is not a valid command!");
 	}
 });
 
-client.login(process.env.BOT_TOKEN);
+async function sendBoard(message, currentUser, opponent, board) {
+	const fileName = `c4_${currentUser}_vs_${opponent}.png`;
+	const canvas = C4.createCanvasFromBoard(board);
+	await C4.saveCanvasAsPNG(canvas, __dirname, fileName);
+	await message.channel.send(new Discord.MessageAttachment(`./${fileName}`));
+	fs.unlinkSync(`${__dirname}/${fileName}`, () => {});
+}
 
-// const board = drawBoard([
-//   0,0,0,0,0,0,0,
-//   0,0,0,0,0,0,0,
-//   0,0,0,0,0,0,0,
-//   0,0,0,0,0,0,0,
-//   0,0,0,0,0,0,0,
-//   0,0,0,0,0,0,0,
-// ]);
+client.login(process.env.BOT_TOKEN);

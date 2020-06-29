@@ -1,79 +1,116 @@
+const fs = require("fs");
 const { createCanvas } = require("canvas");
 
-const discordGray = "#37393F";
-const palettes = {
-	enos16: {
-		blue: "#58AEEE",
-		yellow: "#F9D381",
-		red: "#E75952",
+const DISCORD_GRAY = "#37393F";
+const PALETTES = {
+	ENOS16: {
+		board: "#58AEEE",
+		one: "#F9D381",
+		two: "#E75952",
 	},
-	pico8: {
-		blue: "#29adff",
-		yellow: "#ffec27",
-		red: "#ff004d",
+	PICO8: {
+		board: "#29adff",
+		one: "#ffec27",
+		two: "#ff004d",
 	},
-	web: {
-		blue: "#3399ff",
-		yellow: "#ffcc33",
-		red: "#ff3333",
+	WEB: {
+		board: "#3399ff",
+		one: "#ffcc33",
+		two: "#ff3333",
 	},
 };
 
-const padding = 4;
-const boardWidth = 7;
-const boardHeight = 6;
-const tileSize = 20;
-const palette = palettes.web;
+class Board {
+	constructor(rows, columns) {
+		this.rows = rows;
+		this.columns = columns;
+		this.state = new Array(this.rows * this.columns).fill(0);
+		this.turns = 0;
+	}
 
-const fontSize = Math.floor(tileSize * 0.8);
+	get(x, y) {
+		return this.state[this.columns * y + x];
+	}
 
-const canvas = createCanvas(
-	boardWidth * tileSize + padding * 2,
-	boardHeight * tileSize + padding * 3 + fontSize
-);
-const ctx = canvas.getContext("2d");
+	set(x, y, value) {
+		this.state[this.columns * y + x] = value;
+	}
 
-function clearCanvas() {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	dropAt(x) {
+		if (x < 0 || x > this.columns || this.get(x, 0) !== 0) {
+			return false;
+		}
+
+		const player = this.turns % 2 === 0 ? 1 : 2;
+
+		for (let y = 0; y < this.rows; y++) {
+			if (y + 1 >= this.rows || this.get(x, y + 1) !== 0) {
+        this.set(x, y, player);
+        this.turns++;
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
 
-function newGame() {
-	return new Array(boardWidth * boardHeight).fill(0);
-}
+function createCanvasFromBoard(board, options) {
+	let padding = 4;
+	let tileSize = 20;
+	let fontSize = Math.floor(tileSize * 0.8);
+	let boardColor = PALETTES.WEB.board;
+	let oneColor = PALETTES.WEB.one;
+	let twoColor = PALETTES.WEB.two;
 
-function placeAt(board, x, turn) {
-	const result = board.splice(0);
-	const player = turn % 2 === 0 ? 1 : 2;
+	if (options !== undefined) {
+		if (options.padding !== undefined) {
+			padding = parseInt(options.padding);
+		}
 
-	const get = (x, y) => {
-		return result[boardWidth * y + x];
-	};
-	const set = (x, y, value) => {
-		result[boardWidth * y + x] = value;
-	};
+		if (options.tileSize !== undefined) {
+			tileSize = parseInt(options.tileSize);
+			fontSize = Math.floor(tileSize * 0.8);
+		}
 
-	for (let y = 0; y < boardHeight; y++) {
-		if (y === boardHeight - 1 || get(x - 1, y + 1) !== 0) {
-			set(x - 1, y, player);
-			break;
+		if (options.palette) {
+			if (options.palette.board !== undefined) {
+				boardColor = options.palette.board;
+			}
+			if (options.palette.one !== undefined) {
+				oneColor = options.palette.one;
+			}
+			if (options.palette.two !== undefined) {
+				twoColor = options.palette.two;
+			}
 		}
 	}
 
-	return result;
-}
+	const canvas = createCanvas(
+		board.columns * tileSize + padding * 2,
+		board.rows * tileSize + padding * 3 + fontSize
+	);
+	const ctx = canvas.getContext("2d");
 
-function getBoard(state) {
-	clearCanvas();
+	// Clear Canvas.
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	ctx.fillStyle = palette.blue;
-	ctx.fillRect(0, padding + fontSize, canvas.width, canvas.height);
+	// Draw board.
+	ctx.fillStyle = boardColor;
+	ctx.fillRect(
+		0,
+		padding + fontSize,
+		canvas.width,
+		canvas.height - (padding + fontSize)
+	);
 
+	// Draw text.
 	ctx.font = `bold ${fontSize}px monospace`;
 	ctx.textBaseline = "top";
 	ctx.textAlign = "left";
 
-	for (let i = 0; i < boardWidth; i++) {
-		ctx.fillStyle = "#FFFFF;";
+	for (let i = 0; i < board.columns; i++) {
+		ctx.fillStyle = "#FFFFFF";
 		ctx.fillText(
 			(i + 1).toString(),
 			padding + i * tileSize + tileSize * 0.32,
@@ -81,19 +118,20 @@ function getBoard(state) {
 		);
 	}
 
+	// Draw pieces.
 	let y = 0;
-	for (let i = 0; i < state.length; i++) {
-		const x = i % boardWidth;
+	for (let i = 0; i < board.state.length; i++) {
+		const x = i % board.columns;
 
-		switch (state[i]) {
+		switch (board.state[i]) {
 			case 0:
-				ctx.fillStyle = discordGray;
+				ctx.fillStyle = DISCORD_GRAY;
 				break;
 			case 1:
-				ctx.fillStyle = palette.yellow;
+				ctx.fillStyle = oneColor;
 				break;
 			case 2:
-				ctx.fillStyle = palette.red;
+				ctx.fillStyle = twoColor;
 				break;
 		}
 
@@ -107,7 +145,7 @@ function getBoard(state) {
 		);
 		ctx.fill();
 
-		if (x === boardWidth - 1) {
+		if (x === board.columns - 1) {
 			y++;
 		}
 	}
@@ -115,8 +153,25 @@ function getBoard(state) {
 	return canvas;
 }
 
+function saveCanvasAsPNG(canvas, path, fileName) {
+	return new Promise((resolve, reject) => {
+		const out = fs.createWriteStream(`${path}/${fileName}`);
+		const stream = canvas.createPNGStream();
+
+		stream.pipe(out);
+		out.on("finish", (error) => {
+			if (error !== undefined) {
+				reject(error);
+				return;
+			}
+
+			resolve();
+		});
+	});
+}
+
 module.exports = {
-	newGame,
-	placeAt,
-	getBoard,
+	Board,
+	createCanvasFromBoard,
+	saveCanvasAsPNG,
 };
