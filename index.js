@@ -1,4 +1,7 @@
 require("dotenv").config();
+const fs = require("fs");
+
+const C4 = require("./src/connectFour.js");
 
 const Discord = require("discord.js");
 const client = new Discord.Client();
@@ -37,6 +40,33 @@ client.on("message", (message) => {
 					games.splice(i, 1);
 				}
 				return;
+
+			case "connectfour":		
+        const x = parseInt(message.content);
+
+        if (!Number.isInteger(x)) {
+					return;
+				}
+
+				const newState = C4.placeAt(games[i].board, x, games[i].turns);
+				console.log(newState);
+				games[i].turns++;
+
+				const board = C4.getBoard(newState);
+				games[i].board = newState;
+
+				const out = fs.createWriteStream(__dirname + "/test.png");
+				const stream = board.createPNGStream();
+				stream.pipe(out);
+
+				out.on("finish", async () => {
+					await message.channel.send(
+						new Discord.MessageAttachment("./test.png")
+					);
+					fs.unlink(__dirname + "/test.png", () => {});
+				});
+
+				return;
 		}
 	}
 
@@ -52,7 +82,31 @@ client.on("message", (message) => {
 			break;
 
 		case "connectfour":
+			if (formattedMessage[2] !== "vs") {
+				message.channel.send("Error");
+				break;
+			}
+
 			message.channel.send("Starting a new game of Connect Four!");
+
+			const state = C4.newGame();
+			const board = C4.getBoard(state);
+
+			const out = fs.createWriteStream(__dirname + "/test.png");
+			const stream = board.createPNGStream();
+			stream.pipe(out);
+
+			out.on("finish", async () => {
+				await message.channel.send(new Discord.MessageAttachment("./test.png"));
+				fs.unlink(__dirname + "/test.png", () => {});
+			});
+
+			games.push({
+				type: "connectfour",
+				players: new Set([player, message.author.username]),
+				board: state,
+				turns: 0,
+			});
 			break;
 
 		case "numberguess":
@@ -67,8 +121,63 @@ client.on("message", (message) => {
 				number: Math.floor(Math.random() * 100 + 1),
 				turns: 0,
 			});
-
 			break;
+
+		// case "test":
+		// 	const board = getBoard([
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		1,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		2,
+		// 		2,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		1,
+		// 		1,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		1,
+		// 		2,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		0,
+		// 		1,
+		// 		2,
+		// 		1,
+		// 		2,
+		// 		0,
+		// 		0,
+		// 	]);
+
+		// 	const out = fs.createWriteStream(__dirname + "/test.png");
+		// 	const stream = board.createPNGStream();
+		// 	stream.pipe(out);
+
+		// 	out.on("finish", async () => {
+		// 		await message.channel.send(new Discord.MessageAttachment("./test.png"));
+		// 		fs.unlink(__dirname + "/test.png", () => {});
+		// 	});
+		// 	break;
 
 		default:
 			message.reply("Sorry but that is not a valid command!");
@@ -76,3 +185,12 @@ client.on("message", (message) => {
 });
 
 client.login(process.env.BOT_TOKEN);
+
+// const board = drawBoard([
+//   0,0,0,0,0,0,0,
+//   0,0,0,0,0,0,0,
+//   0,0,0,0,0,0,0,
+//   0,0,0,0,0,0,0,
+//   0,0,0,0,0,0,0,
+//   0,0,0,0,0,0,0,
+// ]);
