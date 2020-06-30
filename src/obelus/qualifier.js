@@ -4,8 +4,10 @@ class Qualifier {
 		this.commands = [];
 	}
 
-	addCommand(command) {
-		this.commands.push(command);
+	addCommand(...command) {
+		for (let c of command) {
+			this.commands.push(c);
+		}
 
 		return this;
 	}

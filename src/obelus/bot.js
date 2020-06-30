@@ -17,8 +17,10 @@ class Bot {
 		});
 	}
 
-	addQualifier(qualifier) {
-		this.qualifiers.push(qualifier);
+	addQualifier(...qualifier) {
+		for (let q of qualifier) {
+			this.qualifiers.push(q);
+		}
 
 		return this;
 	}
