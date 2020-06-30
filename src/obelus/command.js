@@ -1,32 +1,37 @@
 class Command {
 	constructor(args, onMatch) {
-		this.args = args.split(/\s+/g);
+		this.aliases = [];
+
+		const formattedArgs = args.toLowerCase().trim();
+
+		if (formattedArgs.indexOf("|") >= 0) {
+			const aliases = formattedArgs.split("|");
+
+			for (let alias of aliases) {
+				this.aliases.push(alias.trim());
+			}
+		} else {
+			this.aliases.push(formattedArgs);
+		}
+
 		this.onMatch = onMatch;
 	}
 
 	update(message, args) {
-		for (let i = 0; i < this.args.length; i++) {
-			if (this.args[i].indexOf("|") !== -1) {
-				const aliases = this.args[i].split("|");
-				let valid = false;
-				for (let alias of aliases) {
-					if (alias === args[i]) {
-						valid = true;
-						break;
-					}
-				}
+		let aliasIndex = -1;
 
-				if (!valid) {
-					return;
-				}
-			} else {
-				if (this.args[i] !== args[i]) {
-					return;
-				}
+		for (let i = 0; i < this.aliases.length; i++) {
+			if (args.substring(0, this.aliases[i].length) === this.aliases[i]) {
+				aliasIndex = i;
+				break;
 			}
 		}
 
-		this.onMatch(message, args);
+		if (aliasIndex === -1) {
+			return;
+		}
+
+		this.onMatch(message, args.substring(this.aliases[aliasIndex].length + 1));
 	}
 }
 
