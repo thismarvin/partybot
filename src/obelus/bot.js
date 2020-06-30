@@ -1,31 +1,24 @@
 const Discord = require("discord.js");
 
 class Bot {
-	constructor(token, qualifier) {
+	constructor(token) {
 		this.token = token;
-		this.qualifier = qualifier.toLowerCase();
-		this.client = new Discord.Client(this.token);
-		this.commands = [];
+		this.client = new Discord.Client();
+		this.qualifiers = [];
 
 		this.client.on("ready", () => {
 			console.log(`Logged in as ${this.client.user.tag}!`);
 		});
 
 		this.client.on("message", (message) => {
-			const args = message.content.toLowerCase().split(/\s+/g);
-
-			if (args[0] !== this.qualifier) {
-				return;
-			}
-
-			for (let command of this.commands) {
-				command.update(message, args.slice(1));
+			for (let qualifier of this.qualifiers) {
+				qualifier.update(message);
 			}
 		});
 	}
 
-	addCommand(command) {
-		this.commands.push(command);
+	addQualifier(qualifier) {
+		this.qualifiers.push(qualifier);
 
 		return this;
 	}
