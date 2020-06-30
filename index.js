@@ -28,15 +28,15 @@ client.on("message", async (message) => {
 				const guess = parseInt(message.content);
 
 				if (guess < games[i].number) {
-					message.reply("Too low!");
+					message.reply("too low!");
 				}
 
 				if (guess > games[i].number) {
-					message.reply("Too high!");
+					message.reply("too high!");
 				}
 
 				if (guess === games[i].number) {
-					message.reply(`You win! It took you ${games[i].turns} tries to win.`);
+					message.reply(`you win! It took you ${games[i].turns} tries to win.`);
 					games.splice(i, 1);
 				}
 				return;
@@ -126,7 +126,7 @@ client.on("message", async (message) => {
 
 		case "numberguess":
 			message.channel.send("Starting a new game of Number Guess!");
-			message.channel.send(
+			message.reply(
 				"I chose a number between 1 and 100. See if you can guess what number it is."
 			);
 
@@ -157,7 +157,7 @@ async function sendBoard(message, currentUser, opponent, board) {
 	const embed = new Discord.MessageEmbed()
 		.setTitle(`${currentUser} vs ${opponent}`)
 		.setDescription(
-			`You're up next ${board.turns % 2 == 0 ? opponent : currentUser}`
+			`Your move ${board.turns % 2 == 0 ? opponent : currentUser}`
 		)
 		.attachFiles(attachment)
 		.setImage("attachment://board.png");
