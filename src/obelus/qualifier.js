@@ -13,7 +13,7 @@ class Qualifier {
 	}
 
 	update(message) {
-		const prefix = message.content.toLowerCase().trim().split(/\s/g)[0];
+		const prefix = message.content.toLowerCase().trim().split(/\s/)[0];
 
 		if (this.prefix !== prefix) {
 			return;

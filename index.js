@@ -5,8 +5,15 @@ const refactor = new Obelus.Qualifier("$refactor").addCommand(
 	new Obelus.Command("hello", (message) => {
 		message.reply("how are you?");
 	}),
-	new Obelus.Command("repeat|copy", (message, args) => {
-		message.reply(`${args}`);
+	new Obelus.Command("repeat|copy", (message) => {
+		const args = message.content.split(/\s/);
+		let word = "";
+
+		for (let i = 2; i < args.length; i++) {
+			word += `${args[i]} `;
+		}
+
+		message.reply(`${word}`);
 	}),
 	new Obelus.Command("true or false|true or false,|torf", (message) => {
 		if (Math.floor(Math.random() * 100) % 2 === 0) {
@@ -14,6 +21,17 @@ const refactor = new Obelus.Qualifier("$refactor").addCommand(
 		} else {
 			message.reply("false");
 		}
+	}),
+	new Obelus.Command(/\sor\s/, (message, args) => {
+		const options = args.split(/\sor\s/);
+
+		let result = options[Math.floor(Math.random() * options.length)];
+
+		if (/\w+\?/g.test(result)) {
+			result = result.substring(0, result.length - 1);
+		}
+
+		message.reply(result);
 	})
 );
 
