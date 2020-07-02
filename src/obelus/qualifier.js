@@ -1,6 +1,6 @@
 class Qualifier {
 	constructor(prefix) {
-		this.prefix = prefix.toLowerCase();
+		this.prefix = prefix;
 		this.commands = [];
 	}
 
@@ -13,19 +13,19 @@ class Qualifier {
 	}
 
 	update(message) {
-		const prefix = message.content.toLowerCase().trim().split(/\s/)[0];
-
-		if (this.prefix !== prefix) {
+		if (
+			`${message.content.substring(0, this.prefix.length)} ` !==
+			`${this.prefix} `
+		) {
 			return;
 		}
 
-		const args = message.content
-			.toLowerCase()
-			.trim()
-			.substring(this.prefix.length + 1);
+		const args = message.content.substring(this.prefix.length).trim();
 
 		for (let command of this.commands) {
-			command.update(message, args);
+			if (command.parse(message, args)) {
+				return;
+			}
 		}
 	}
 }
