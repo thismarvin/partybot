@@ -1,16 +1,16 @@
-const DIRECTIONS = {
-	UP: 1,
-	UP_RIGHT: 2,
-	RIGHT: 4,
-	DOWN_RIGHT: 8,
-	DOWN: 16,
-	DOWN_LEFT: 32,
-	LEFT: 64,
-	UP_LEFT: 128,
+const DIRECTION = {
+	UP: { x: 0, y: -1 },
+	UP_RIGHT: { x: 1, y: -1 },
+	RIGHT: { x: 1, y: 0 },
+	DOWN_RIGHT: { x: 1, y: 1 },
+	DOWN: { x: 0, y: 1 },
+	DOWN_LEFT: { x: -1, y: 1 },
+	LEFT: { x: -1, y: 0 },
+	UP_LEFT: { x: -1, y: -1 },
 };
 
 class Board {
-	constructor(rows=6, columns=7, target=4) {
+	constructor(rows = 6, columns = 7, target = 4) {
 		this.rows = rows;
 		this.columns = columns;
 		this.state = new Array(this.rows * this.columns).fill(0);
@@ -31,36 +31,36 @@ class Board {
 		const targetPiece = this.get(x, y);
 
 		if (x > 0 && this.get(x - 1, y) === targetPiece) {
-			result.push(DIRECTIONS.LEFT);
+			result.push(DIRECTION.LEFT);
 		}
 		if (x < this.columns - 1 && this.get(x + 1, y) === targetPiece) {
-			result.push(DIRECTIONS.RIGHT);
+			result.push(DIRECTION.RIGHT);
 		}
 		if (y > 0 && this.get(x, y - 1) === targetPiece) {
-			result.push(DIRECTIONS.UP);
+			result.push(DIRECTION.UP);
 		}
 		if (y < this.rows - 1 && this.get(x, y + 1) === targetPiece) {
-			result.push(DIRECTIONS.DOWN);
+			result.push(DIRECTION.DOWN);
 		}
 		if (y > 0 && x > 0 && this.get(x - 1, y - 1) === targetPiece) {
-			result.push(DIRECTIONS.UP_LEFT);
+			result.push(DIRECTION.UP_LEFT);
 		}
 		if (
 			y > 0 &&
 			x < this.columns - 1 &&
 			this.get(x + 1, y - 1) === targetPiece
 		) {
-			result.push(DIRECTIONS.UP_RIGHT);
+			result.push(DIRECTION.UP_RIGHT);
 		}
 		if (y < this.rows - 1 && x > 0 && this.get(x - 1, y + 1) === targetPiece) {
-			result.push(DIRECTIONS.DOWN_LEFT);
+			result.push(DIRECTION.DOWN_LEFT);
 		}
 		if (
 			y < this.rows - 1 &&
 			x < this.columns - 1 &&
 			this.get(x + 1, y + 1) === targetPiece
 		) {
-			result.push(DIRECTIONS.DOWN_RIGHT);
+			result.push(DIRECTION.DOWN_RIGHT);
 		}
 
 		return result;
@@ -68,68 +68,27 @@ class Board {
 
 	/**
 	 * Recursively walks in a given direction and checks whether or not similar pieces are connected.
-	 * @param {Number} x The x position of the current piece.
-	 * @param {Number} y The y position of the current piece.
 	 * @param {Number} targetPiece The type of piece the current and future pieces should connect to.
 	 * @param {Number} direction The direction the pieces should connect in.
+	 * @param {Number} x The x position of the current piece.
+	 * @param {Number} y The y position of the current piece.
 	 * @returns How far the connection between similar pieces extends.
 	 */
 	walk(targetPiece, direction, x, y) {
-		// Make sure the x, y positions are valid in the first place.
+		// Make sure the x, y positions are valid (end condition).
 		if (x < 0 || x > this.columns || y < 0 || this.y > this.rows) {
 			return 0;
 		}
 
-		// Once we reach an edge stop the recursive chain.
-		if (x === 0 || x === this.columns - 1 || y === 0 || y === this.rows - 1) {
-			return this.get(x, y) === targetPiece ? 1 : 0;
-		}
-
-		let xIncrement = 0;
-		let yIncrement = 0;
-
-		switch (direction) {
-			case DIRECTIONS.UP:
-				yIncrement = -1;
-				break;
-
-			case DIRECTIONS.UP_RIGHT:
-				xIncrement = 1;
-				yIncrement = -1;
-				break;
-
-			case DIRECTIONS.RIGHT:
-				xIncrement = 1;
-				break;
-
-			case DIRECTIONS.DOWN_RIGHT:
-				xIncrement = 1;
-				yIncrement = 1;
-				break;
-
-			case DIRECTIONS.DOWN:
-				yIncrement = 1;
-				break;
-
-			case DIRECTIONS.DOWN_LEFT:
-				xIncrement = -1;
-				yIncrement = 1;
-				break;
-
-			case DIRECTIONS.LEFT:
-				xIncrement = -1;
-				break;
-
-			case DIRECTIONS.UP_LEFT:
-				xIncrement = -1;
-				yIncrement = -1;
-				break;
+		// Make sure the current piece is valid.
+		if (this.get(x, y) !== targetPiece) {
+			return 0;
 		}
 
 		// Recursively continue checking consecutive pieces in the appropriate direction.
-		return this.get(x, y) === targetPiece
-			? 1 + this.walk(targetPiece, direction, x + xIncrement, y + yIncrement)
-			: 0;
+		return (
+			1 + this.walk(targetPiece, direction, x + direction.x, y + direction.y)
+		);
 	}
 
 	/**
