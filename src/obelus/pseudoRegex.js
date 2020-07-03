@@ -19,7 +19,10 @@ class PseudoRegex {
 	test(string) {
 		const formatted = string.toLowerCase();
 		for (let alias of this.aliases) {
-			if (`${formatted.substring(0, alias.length)} ` === `${alias} `) {
+			if (
+				formatted === alias ||
+				formatted.substring(0, alias.length + 1) === `${alias} `
+			) {
 				return true;
 			}
 		}

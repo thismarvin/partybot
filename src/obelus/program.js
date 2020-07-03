@@ -14,8 +14,8 @@ class Program {
 
 	update(message) {
 		if (
-			`${message.content.substring(0, this.prefix.length)} ` !==
-			`${this.prefix} `
+			message.content === this.prefix ||
+			message.content.substring(0, this.prefix.length + 1) !== `${this.prefix} `
 		) {
 			return;
 		}
