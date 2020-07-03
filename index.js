@@ -96,7 +96,7 @@ function postfix(args) {
 	return stack.pop();
 }
 
-const ref = new Obelus.Qualifier("$ref").addCommand(
+const ref = new Obelus.Program("$ref").addCommand(
 	new Obelus.Command("hello|hi|hey", (message) => {
 		switch (Math.floor(Math.random() * 5)) {
 			case 0:
@@ -157,7 +157,7 @@ const ref = new Obelus.Qualifier("$ref").addCommand(
 	})
 );
 
-const challenge = new Obelus.Qualifier("!challenge").addCommand(
+const challenge = new Obelus.Program("!challenge").addCommand(
 	new Obelus.Command("number guess|numberguess|ng", (message) => {
 		message.reply("starting a new game of Number Guess.");
 	}),
@@ -166,7 +166,7 @@ const challenge = new Obelus.Qualifier("!challenge").addCommand(
 	})
 );
 
-const math = new Obelus.Qualifier("$math").addCommand(
+const math = new Obelus.Program("$math").addCommand(
 	new Obelus.Command("pre|prefix", (message, args) => {
 		const formatted = args.split(/\s/);
 		formatted.shift();
@@ -195,4 +195,4 @@ const math = new Obelus.Qualifier("$math").addCommand(
 	})
 );
 
-new Obelus.Bot(process.env.BOT_TOKEN).addQualifier(ref, challenge, math).run();
+new Obelus.Bot(process.env.BOT_TOKEN).addProgram(ref, challenge, math).run();

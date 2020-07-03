@@ -1,4 +1,4 @@
-class Qualifier {
+class Program {
 	constructor(prefix) {
 		this.prefix = prefix;
 		this.commands = [];
@@ -30,4 +30,4 @@ class Qualifier {
 	}
 }
 
-module.exports = Qualifier;
+module.exports = Program;
