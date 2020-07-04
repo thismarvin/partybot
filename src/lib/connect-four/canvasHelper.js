@@ -11,7 +11,6 @@ function saveAsPNG(canvas, path, fileName) {
 				reject(error);
 				return;
 			}
-
 			resolve();
 		});
 	});
