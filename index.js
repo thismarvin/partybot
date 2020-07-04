@@ -1,5 +1,6 @@
 require("dotenv").config();
-const Obelus = require("./src/obelus/index.js");
+const Obelus = require("./src/lib/obelus/index.js");
+const connectFour = require("./src/core/connect-four/program.js");
 
 function evaluate(a, b, operator) {
 	switch (operator) {
@@ -124,7 +125,7 @@ const ref = new Obelus.Program("$ref").addCommand(
 			word += `${args[i].trim()}`;
 		}
 
-		message.reply(word);
+		message.channel.send(word);
 	}),
 	new Obelus.Command(/\btrue or false\b,*|\btorf\b/, (message) => {
 		if (Math.floor(Math.random() * 100) % 2 === 0) {
@@ -157,15 +158,6 @@ const ref = new Obelus.Program("$ref").addCommand(
 	})
 );
 
-const challenge = new Obelus.Program("!challenge").addCommand(
-	new Obelus.Command("number guess|numberguess|ng", (message) => {
-		message.reply("starting a new game of Number Guess.");
-	}),
-	new Obelus.Command("connect four|connectfour|connect4|c4", (message) => {
-		message.reply("starting a new game of Connect Four.");
-	})
-);
-
 const math = new Obelus.Program("$math").addCommand(
 	new Obelus.Command("pre|prefix", (message, args) => {
 		const formatted = args.split(/\s/);
@@ -195,4 +187,4 @@ const math = new Obelus.Program("$math").addCommand(
 	})
 );
 
-new Obelus.Bot(process.env.BOT_TOKEN).addProgram(ref, challenge, math).run();
+new Obelus.Bot(process.env.BOT_TOKEN).addProgram(ref, math, connectFour).run();
