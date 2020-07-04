@@ -1,54 +1,132 @@
+const Discord = require("discord.js");
+const fs = require("fs");
 const Obelus = require("../../lib/obelus/index.js");
 const Game = require("./game.js");
+const { CanvasHelper } = require("../../lib/connect-four/index.js");
 
 const gameMap = new Map();
 const gameInfoMap = new Map();
 
-const program = new Obelus.Program("!challenge").addCommand(
-	new Obelus.Command(
-		/<@!\d+>\s+to\s+(connectfour|connect\s+four|connect4|c4)\b/,
-		(message, args) => {
-			const guildId = parseInt(message.guild.id);
-			const challengerId = parseInt(message.author.id);
-			const opponentId = parseInt(args.substring(3, args.indexOf(">")));
+const program = new Obelus.Program("!challenge")
+	.addCommand(
+		new Obelus.Command(
+			/<@!\d+>\s+to\s+(connectfour|connect\s+four|connect4|c4)\b/,
+			async (message, args) => {
+				const guildId = parseInt(message.guild.id);
+				const challengerId = parseInt(message.author.id);
+				const opponentId = parseInt(args.substring(3, args.indexOf(">")));
 
-			// Create a unique game id.
-			let gameId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-			while (gameMap.has(gameId)) {
-				gameId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-			}
+				const challengerName = message.author.username;
+				const opponentName = message.mentions.users.first().username;
 
-			// Make sure the info map contains the current guild.
-			if (!gameInfoMap.has(guildId)) {
-				gameInfoMap.set(guildId, new Map());
-			}
+				// Create a unique game id.
+				let gameId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+				while (gameMap.has(gameId)) {
+					gameId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+				}
 
-			const guildInfo = gameInfoMap.get(guildId);
+				// Make sure the info map contains the current guild.
+				if (!gameInfoMap.has(guildId)) {
+					gameInfoMap.set(guildId, new Map());
+				}
 
-			// Make sure that neither the challenger nor the opponent are already in a game.
-			let player = null;
-			if (guildInfo.has(challengerId)) {
-				player = message.author.username;
-			} else if (guildInfo.has(opponentId)) {
-				player = message.mentions.users.first();
-			}
+				const guildInfo = gameInfoMap.get(guildId);
 
-			if (player !== null) {
-				message.reply(
-					`${player} is already in a game; cannot start a new game.`
+				// Make sure that neither the challenger nor the opponent are already in a game.
+				let player = null;
+				if (guildInfo.has(challengerId)) {
+					player = challengerName;
+				} else if (guildInfo.has(opponentId)) {
+					player = opponentName;
+				}
+
+				if (player !== null) {
+					message.reply(
+						`${player} is already in a game; cannot start a new game.`
+					);
+					return;
+				}
+
+				// We passed all the preconditions, so setup the game.
+				gameMap.set(
+					gameId,
+					new Game(message.author, message.mentions.users.first())
 				);
-				return;
+
+				guildInfo.set(opponentId, gameId);
+				guildInfo.set(challengerId, gameId);
+
+				message.reply("Starting a new game of connect four!");
+
+				await sendBoard(message, gameMap.get(gameId), guildId, opponentId);
 			}
-
-			// We passed all the preconditions, so setup the game.
-			gameMap.set(gameId, new Game(challengerId, opponentId));
-
-			guildInfo.set(opponentId, gameId);
-			guildInfo.set(challengerId, gameId);
-
-			message.reply("Starting a new game of connect four!");
-		}
+		)
 	)
-);
+	.setOnMessage(async (message) => {
+		const args = message.content.split(/\s+/);
+
+		if (!/\d+/.test(args[0])) {
+			return;
+		}
+
+		const guildId = parseInt(message.guild.id);
+
+		if (!gameInfoMap.has(guildId)) {
+			return;
+		}
+
+		const guildInfo = gameInfoMap.get(guildId);
+		const authorId = parseInt(message.author.id);
+
+		if (!guildInfo.has(authorId)) {
+			return;
+		}
+
+		const gameId = guildInfo.get(authorId);
+		const game = gameMap.get(gameId);
+
+		if (!game.process(args[0])) {
+			message.reply(", that is not a valid move!");
+			return;
+		}
+
+		await sendBoard(message, game, guildId, authorId);
+
+		if (game.winCondition) {
+			const winner = game.turns % 2 === 0 ? game.opponent : game.challenger;
+
+			await message.channel.send(`${winner}, congrats! You won!`);
+
+			gameMap.delete(gameId);
+			guildInfo.delete(parseInt(game.challenger.id));
+			guildInfo.delete(parseInt(game.opponent.id));
+		}
+	});
+
+async function sendBoard(message, game, guildId, currentUserId) {
+	const canvas = game.canvas;
+	const fileName = `c4_${guildId}_${currentUserId}.png`;
+
+	await CanvasHelper.saveAsPNG(canvas, __dirname, fileName);
+
+	const attachment = new Discord.MessageAttachment(
+		`${__dirname}/${fileName}`,
+		"board.png"
+	);
+
+	const embed = new Discord.MessageEmbed()
+		.setTitle(`${game.challenger.username} vs ${game.opponent.username}`)
+		.setDescription(
+			`Your move **${
+				game.turns % 2 == 0 ? game.opponent.username : game.challenger.username
+			}**`
+		)
+		.attachFiles(attachment)
+		.setImage("attachment://board.png");
+
+	await message.channel.send(embed);
+
+	fs.unlinkSync(`${__dirname}/${fileName}`, () => {});
+}
 
 module.exports = program;
