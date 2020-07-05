@@ -69,6 +69,11 @@ const program = new Obelus.Program("!challenge")
 					return;
 				}
 
+				// Check if the user was cheeky and tried to queue two games at once.
+				if (guildInfo.has(challengerId) || guildInfo.has(opponentId)) {
+					return;
+				}
+
 				// We passed all the preconditions, so setup the game.
 				gameMap.set(
 					gameId,
