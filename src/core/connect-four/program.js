@@ -134,7 +134,7 @@ const program = new Obelus.Program("!challenge")
 		// Send the game's current state back to the user.
 		await sendBoard(message, game, gameId);
 
-		// Check if the current use won the game.
+		// Check if the current user won the game.
 		if (game.winCondition) {
 			const winner = game.turns % 2 === 0 ? game.opponent : game.challenger;
 
@@ -144,6 +144,21 @@ const program = new Obelus.Program("!challenge")
 			gameMap.delete(gameId);
 			guildInfo.delete(parseInt(game.challenger.id));
 			guildInfo.delete(parseInt(game.opponent.id));
+
+			return;
+		}
+
+		if (game.tied) {
+			await message.channel.send(
+				`${game.challenger} ${game.opponent}, looks like it's a tie!`
+			);
+
+			// Clean up the current game.
+			gameMap.delete(gameId);
+			guildInfo.delete(parseInt(game.challenger.id));
+			guildInfo.delete(parseInt(game.opponent.id));
+
+			return;
 		}
 	});
 

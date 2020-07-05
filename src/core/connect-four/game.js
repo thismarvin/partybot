@@ -14,6 +14,20 @@ class Game {
 		return this.board.winCondition(currentPiece);
 	}
 
+	get tied() {
+		if (this.turns < this.board.state.length) {
+			return false;
+		}
+
+		for (let x = 0; x < this.board.columns; x++) {
+			if (this.board.get(x, 0) === 0) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+
 	constructor(challenger, opponent) {
 		this.type = "CONNECT_FOUR";
 		this.challenger = challenger;
