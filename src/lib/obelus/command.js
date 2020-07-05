@@ -14,7 +14,7 @@ class Command {
 	}
 
 	parse(message, args) {
-		if (!this.regex.test(args)){
+		if (!this.regex.test(args)) {
 			return false;
 		}
 

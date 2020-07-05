@@ -15,7 +15,7 @@ class Program {
 
 	setOnMessage(lambda) {
 		this.onMessage = lambda;
-		
+
 		return this;
 	}
 
