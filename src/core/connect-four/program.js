@@ -10,14 +10,15 @@ const gameInfoMap = new Map();
 const program = new Obelus.Program("!challenge")
 	.addCommand(
 		new Obelus.Command(
-			/<@!\d+>\s+to\s+(connectfour|connect\s+four|connect4|c4)\b/i,
-			async (message, args) => {
+			/<@!\d+>\s+to\s+(connectfour|connect\s+four|connect4|connect\s+4|c4)\b/i,
+			async (message) => {
 				const guildId = parseInt(message.guild.id);
-				const challengerId = parseInt(message.author.id);
-				const opponentId = parseInt(args.substring(3, args.indexOf(">")));
 
-				const challengerName = message.author.username;
-				const opponentName = message.mentions.users.first().username;
+				const challenger = message.author;
+				const opponent = message.mentions.users.first();
+
+				const challengerId = parseInt(challenger.id);
+				const opponentId = parseInt(opponent.id);
 
 				// Create a unique game id.
 				let gameId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
@@ -35,14 +36,35 @@ const program = new Obelus.Program("!challenge")
 				// Make sure that neither the challenger nor the opponent are already in a game.
 				let player = null;
 				if (guildInfo.has(challengerId)) {
-					player = challengerName;
+					player = challenger;
 				} else if (guildInfo.has(opponentId)) {
-					player = opponentName;
+					player = opponent;
 				}
 
 				if (player !== null) {
 					message.reply(
-						`${player} is already in a game; cannot start a new game.`
+						`${player.username} is already in a game; cannot start a new game.`
+					);
+					return;
+				}
+
+				// Send a message to the opponent that confirms their participation.
+				const confirmationMessage = await message.channel.send(
+					`${opponent}, react to this message to accept the challenge.`
+				);
+
+				// Wait ten seconds to see whether or not the opponent reacted to the message.
+				const reactions = await confirmationMessage.awaitReactions(
+					(_, user) => user.id === opponent.id,
+					{
+						time: 10000,
+					}
+				);
+
+				// Do no setup the game if the opponent never responded.
+				if (reactions.size === 0) {
+					message.reply(
+						`sorry but it looks like ${opponent.username} doesn't want to play.`
 					);
 					return;
 				}
