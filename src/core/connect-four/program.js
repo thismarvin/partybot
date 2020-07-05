@@ -10,7 +10,7 @@ const gameInfoMap = new Map();
 const program = new Obelus.Program("!challenge")
 	.addCommand(
 		new Obelus.Command(
-			/<@!\d+>\s+to\s+(connectfour|connect\s+four|connect4|c4)\b/,
+			/<@!\d+>\s+to\s+(connectfour|connect\s+four|connect4|c4)\b/i,
 			async (message, args) => {
 				const guildId = parseInt(message.guild.id);
 				const challengerId = parseInt(message.author.id);
