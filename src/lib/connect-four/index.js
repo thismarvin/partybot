@@ -1,7 +1,5 @@
-const Board = require("./board.js");
-const CanvasHelper = require("./canvasHelper.js");
-
 module.exports = {
-	Board,
-	CanvasHelper,
+	Board: require("./board.js"),
+	CanvasHelper: require("./canvasHelper.js"),
+	Game: require("./game.js"),
 };

@@ -1,4 +1,4 @@
-const { Board, CanvasHelper } = require("../../lib/connect-four/index.js");
+const Board = require("./board.js");
 
 class Game {
 	get turns() {
@@ -24,7 +24,7 @@ class Game {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 

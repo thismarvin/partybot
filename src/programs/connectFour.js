@@ -1,13 +1,12 @@
 const Discord = require("discord.js");
 const fs = require("fs");
-const Obelus = require("../../lib/obelus/index.js");
-const Game = require("./game.js");
-const { CanvasHelper } = require("../../lib/connect-four/index.js");
+const Obelus = require("../lib/obelus/index.js");
+const { CanvasHelper, Game } = require("../lib/connect-four/index.js");
 
 const gameMap = new Map();
 const gameInfoMap = new Map();
 
-const program = new Obelus.Program("!challenge")
+const connectFour = new Obelus.Program("!challenge")
 	.addCommand(
 		new Obelus.Command(
 			/<@!\d+>\s+to\s+(connectfour|connect\s+four|connect4|connect\s+4|c4)\b/i,
@@ -188,4 +187,4 @@ async function sendBoard(message, game, gameId) {
 	fs.unlinkSync(`${__dirname}/${fileName}`, () => {});
 }
 
-module.exports = program;
+module.exports = connectFour;
